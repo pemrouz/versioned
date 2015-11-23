@@ -1,0 +1,38 @@
+{
+  "name": "versioned",
+  "version": "0.0.0",
+  "main": "dist",
+  "author": "Pedram Emrouznejad (https://github.com/pemrouz)",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rijs/versioned.git"
+  },
+  "scripts": {
+    "ignore": "find ./dist -type f -exec sed -i \"s/function _interopRequire/\\/* istanbul ignore next *\\/\\nfunction _interopRequire/g\" {} ;",
+    "babel": "babel src -d dist",
+    "clean": "rm -rf dist && mkdir dist",
+    "build": "npm run clean && npm run babel && npm run ignore",
+    "test": "babel test.js > dist/test.js && istanbul test ./node_modules/mocha/bin/_mocha dist/test.js --report html -- -R spec && rm dist/test.js",
+    "coverage": "babel test.js > dist/test.js && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js --report lcovonly -- -R spec && rm -rf ./coverage && rm dist/test.js",
+    "cov": "babel test.js > dist/test.js && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js -- -R spec",
+    "version": "npm run build && git add -A",
+    "postversion": "git push && git push --tags"
+  },
+  "license": "pemrouz.mit-license.org",
+  "devDependencies": {
+    "babel-cli": "*",
+    "babel-preset-es2015": "*",
+    "browserify": "*",
+    "chai": "*",
+    "popper": "*",
+    "coveralls": "*",
+    "istanbul": "*",
+    "mocha": "*",
+    "mocha-lcov-reporter": "*",
+    "uglify-js": "*"
+  },
+  "dependencies": {
+    "immutable": "*",
+    "utilise": "*"
+  }
+}

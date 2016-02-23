@@ -1,251 +1,234 @@
+import emitterify from 'utilise/emitterify'
 import last from 'utilise/last'
 import time from 'utilise/time'
 import { expect } from 'chai'
-import { default as versioned, set } from './'
+import { versioned, set, push, update, remove, pop } from './'
 
 describe('versioned', function() {
 
-  it('should changelog object', done => {
-    var o = versioned({})
+  it('should set - object', () => {
+    var changes = []
+      , o = versioned({}).on('log', diff => changes.push(diff))
 
+    expect(o).to.eql({})
     expect(o.log.length).to.eql(1) 
     expect(last(o.log).diff).to.eql(undefined)
     expect(last(o.log).value.toJS()).to.eql({})
+    expect(changes).to.eql([])
 
-    time(100, d => o.focused = false)
-    time(110, d => { expect(o.log.length).to.eql(2)
-                     expect(last(o.log).diff).to.eql({ key: 'focused', value: false, type: 'add' })
-                     expect(last(o.log).value.toJS()).to.eql({ focused: false }) })
+    expect(set({ key: 'focused', value: false, type: 'add' })(o)).to.eql(o)
+    expect(o).to.eql({ 'focused': false })
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: 'focused', value: false, type: 'add' })
+    expect(last(o.log).value.toJS()).to.eql({ focused: false })
+    expect(changes).to.eql([
+      { key: 'focused', value: false, type: 'add' }
+    ])
 
-    time(200, d => o.focused = true)
-    time(210, d => { expect(o.log.length).to.eql(3)
-                     expect(last(o.log).diff).to.eql({ key: 'focused', value: true, type: 'update' })                     
-                     expect(last(o.log).value.toJS()).to.eql({ focused: true }) })
+    expect(set({ key: 'focused', value: true, type: 'update' })(o)).to.eql(o)
+    expect(o).to.eql({ 'focused': true })
+    expect(o.log.length).to.eql(3)
+    expect(last(o.log).diff).to.eql({ key: 'focused', value: true, type: 'update' })
+    expect(last(o.log).value.toJS()).to.eql({ focused: true })
+    expect(changes).to.eql([
+      { key: 'focused', value: false, type: 'add' }
+    , { key: 'focused', value: true, type: 'update' }
+    ])
 
-    time(300, d => delete o.focused)
-    time(310, d => { expect(o.log.length).to.eql(4)
-                     expect(last(o.log).diff).to.eql({ key: 'focused', value: true, type: 'delete' })                     
-                     expect(last(o.log).value.toJS()).to.eql({}) })
-
-    time(400, done)
+    expect(set({ key: 'focused', value: true, type: 'remove' })(o)).to.eql(o)
+    expect(o).to.eql({})
+    expect(o.log.length).to.eql(4)
+    expect(last(o.log).diff).to.eql({ key: 'focused', value: true, type: 'remove' })
+    expect(last(o.log).value.toJS()).to.eql({})
+    expect(changes).to.eql([
+      { key: 'focused', value: false, type: 'add' }
+    , { key: 'focused', value: true, type: 'update' }
+    , { key: 'focused', value: true, type: 'remove' }
+    ])
   })
 
-  it('should changelog array', done => {
-    var o = versioned([])
+  it('should set - array', () => {
+    var changes = []
+      , o = versioned([]).on('log', diff => changes.push(diff))
 
+    expect(o).to.eql([])
     expect(o.log.length).to.eql(1) 
     expect(last(o.log).diff).to.eql(undefined)
     expect(last(o.log).value.toJS()).to.eql([])
+    expect(changes).to.eql([])
 
-    time(100, d => o.push('foo'))
-    time(110, d => { expect(o.log.length).to.eql(2)
-                     expect(last(o.log).diff).to.eql({ key: '0', value: 'foo', type: 'add' })
-                     expect(last(o.log).value.toJS()).to.eql(['foo']) })
+    expect(set({ key: 0, value: 'foo', type: 'add' })(o)).to.eql(o)
+    expect(o).to.eql(['foo'])
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: '0', value: 'foo', type: 'add' })
+    expect(last(o.log).value.toJS()).to.eql(['foo'])
+    expect(changes).to.eql([
+      { key: '0', value: 'foo', type: 'add' }
+    ])
 
-    time(200, d => o[0] = 'bar')
-    time(210, d => { expect(o.log.length).to.eql(3)
-                     expect(last(o.log).diff).to.eql({ key: '0', value: 'bar', type: 'update' })                     
-                     expect(last(o.log).value.toJS()).to.eql(['bar']) })
+    expect(set({ key: 0, value: 'bar', type: 'update' })(o)).to.eql(o)
+    expect(o).to.eql(['bar'])
+    expect(o.log.length).to.eql(3)
+    expect(last(o.log).diff).to.eql({ key: '0', value: 'bar', type: 'update' })
+    expect(last(o.log).value.toJS()).to.eql(['bar'])
+    expect(changes).to.eql([
+      { key: '0', value: 'foo', type: 'add' }
+    , { key: '0', value: 'bar', type: 'update' }
+    ])
 
-    time(300, d => o.pop())
-    time(310, d => { expect(o.log.length).to.eql(4)
-                     expect(last(o.log).diff).to.eql({ key: '0', value: 'bar', type: 'delete' })                     
-                     expect(last(o.log).value.toJS()).to.eql([]) })
+    expect(set({ key: 0, value: o[0], type: 'remove' })(o)).to.eql(o)
+    expect(o).to.eql([])
+    expect(o.log.length).to.eql(4)
+    expect(last(o.log).diff).to.eql({ key: '0', value: 'bar', type: 'remove' })
+    expect(last(o.log).value.toJS()).to.eql([])
+    expect(changes).to.eql([
+      { key: '0', value: 'foo', type: 'add' }
+    , { key: '0', value: 'bar', type: 'update' }
+    , { key: '0', value: 'bar', type: 'remove' }
+    ])
 
-    time(400, done)
+  })
+
+  it('should push', () => {
+    var changes = []
+      , o = versioned([]).on('log', diff => changes.push(diff))
+
+    expect(o).to.eql([])
+    expect(o.log.length).to.eql(1) 
+    expect(last(o.log).diff).to.eql(undefined)
+    expect(last(o.log).value.toJS()).to.eql([])
+    expect(changes).to.eql([])
+
+    expect(push('foo')(o)).to.eql(o)
+    expect(o).to.eql(['foo'])
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: '0', value: 'foo', type: 'add' })
+    expect(last(o.log).value.toJS()).to.eql(['foo'])
+    expect(changes).to.eql(o.log.slice(1).map(d => d.diff))
   })
   
+  it('should pop', () => {
+    var changes = []
+      , o = versioned(['foo']).on('log', diff => changes.push(diff))
 
-  it('should add/remove multiple values, at arbitrary index', done => {
-    var o = versioned([])
-
+    expect(o).to.eql(['foo'])
     expect(o.log.length).to.eql(1) 
     expect(last(o.log).diff).to.eql(undefined)
+    expect(last(o.log).value.toJS()).to.eql(['foo'])
+    expect(changes).to.eql([])
+
+    expect(pop(o)).to.eql(o)
+    expect(o).to.eql([])
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: '0', value: 'foo', type: 'remove' })
     expect(last(o.log).value.toJS()).to.eql([])
-
-    time(100, d => o.splice(0, 0, 1, 4))
-    time(110, d => { var len = o.log.length
-                     expect(len).to.eql(3)
-                     expect(o.log[len-2].diff).to.eql({ key: '0', value: 1, type: 'add' })
-                     expect(o.log[len-2].value.toJS()).to.eql([1]) 
-                     expect(o.log[len-1].diff).to.eql({ key: '1', value: 4, type: 'add' })
-                     expect(o.log[len-1].value.toJS()).to.eql([1, 4]) 
-                   })
-
-
-    time(200, d => o.splice(1, 0, 2, 3))
-    time(210, d => { var len = o.log.length
-                     expect(len).to.eql(5)
-                     expect(o.log[len-2].diff).to.eql({ key: '1', value: 2, type: 'add' })
-                     expect(o.log[len-2].value.toJS()).to.eql([1, 2, 4]) 
-                     expect(o.log[len-2].value.toJS().length).to.eql(3) 
-                     expect(o.log[len-1].diff).to.eql({ key: '2', value: 3, type: 'add' })
-                     expect(o.log[len-1].value.toJS()).to.eql([1, 2, 3, 4]) 
-                     expect(o.log[len-1].value.toJS().length).to.eql(4) 
-                   })
-
-    time(300, d => o.splice(1, 2))
-    time(310, d => { var len = o.log.length
-                     expect(len).to.eql(7)
-                     expect(o.log[len-2].diff).to.eql({ key: '1', value: 2, type: 'delete' })
-                     expect(o.log[len-2].value.toJS()).to.eql([1, 3, 4]) 
-                     expect(o.log[len-2].value.toJS().length).to.eql(3) 
-                     expect(o.log[len-1].diff).to.eql({ key: '1', value: 3, type: 'delete' })
-                     expect(o.log[len-1].value.toJS()).to.eql([1, 4]) 
-                     expect(o.log[len-1].value.toJS().length).to.eql(2) 
-                   })
-
-    time(400, done)
+    expect(changes).to.eql(o.log.slice(1).map(d => d.diff))
   })
+  
+  it('should remove - array', () => {
+    var changes = []
+      , o = versioned(['foo', 'bar', 'baz']).on('log', diff => changes.push(diff))
 
-  it('should emit change events', done => {
-    var o = versioned([])
-      , result
+    expect(o).to.eql(['foo', 'bar', 'baz'])
+    expect(o.log.length).to.eql(1) 
+    expect(last(o.log).diff).to.eql(undefined)
+    expect(last(o.log).value.toJS()).to.eql(['foo', 'bar', 'baz'])
+    expect(changes).to.eql([])
 
-    o.on('change', d => result = d)
-
-    time(100, d => o.push(1))
-    time(110, d => expect(result).to.eql({ key: '0', value: 1, type: 'add' }))
-    time(120, d => result = null)
-
-    time(200, d => set(o)({ key: 0, value: 2, type: 'add' }))
-    time(210, d => expect(result).to.eql({ key: '0', value: 2, type: 'add' }))
-    time(220, d => result = null)
-
-    time(300, done)
+    expect(remove(1)(o)).to.eql(o)
+    expect(o).to.eql(['foo', 'baz'])
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: '1', value: 'bar', type: 'remove' })
+    expect(last(o.log).value.toJS()).to.eql(['foo', 'baz'])
+    expect(changes).to.eql(o.log.slice(1).map(d => d.diff))
   })
-
-  it('should continue gracefully', done => {
-    var o = versioned([])
-    o.push(1)
-
-    time(10, d => {
-      expect(versioned(o)).to.eql(o)
-      expect(o.log.length).to.eql(2)
-    })
-
-    time(20, d => {
-      expect(versioned(5)).to.eql(5)
-      expect(versioned(5).log).to.not.be.ok
-    })
-
-    time(30, done)
-  })
-
-  it('should explicitly add entries with O.o (array)', done => {
-    var o = versioned([])
     
-    time(100, d => set(o)({ key: 0, value: 1, type: 'add' }))
-    time(110, d => {
-      expect(o).to.eql([1])
-      expect(last(o.log).diff).to.eql({ key: '0', value: 1, type: 'add' })
-      expect(last(o.log).value.toJS()).to.eql([1])
-    })
+  it('should remove - object', () => {
+    var changes = []
+      , o = versioned({ foo: 'bar' }).on('log', diff => changes.push(diff))
 
-    time(200, d => set(o)({ key: 0, value: 2, type: 'update' }))
-    time(210, d => {
-      expect(o).to.eql([2])
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'update' })
-      expect(last(o.log).value.toJS()).to.eql([2])
-    })
+    expect(o).to.eql({ foo: 'bar' })
+    expect(o.log.length).to.eql(1)
+    expect(last(o.log).diff).to.eql(undefined)
+    expect(last(o.log).value.toJS()).to.eql({ foo: 'bar' })
+    expect(changes).to.eql([])
 
-    time(300, d => set(o)({ key: 0, value: 2, type: 'delete' }))
-    time(310, d => {
-      expect(o).to.eql([])
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'delete' })
-      expect(last(o.log).value.toJS()).to.eql([])
-    })
+    expect(remove('foo')(o)).to.eql(o)
+    expect(o).to.eql({})
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: 'foo', value: 'bar', type: 'remove' })
+    expect(last(o.log).value.toJS()).to.eql({})
+    expect(changes).to.eql(o.log.slice(1).map(d => d.diff))
+  })  
 
-    time(400, done)
+  it('should update - array', () => {
+    var changes = []
+      , o = versioned(['foo', 'bar', 'baz']).on('log', diff => changes.push(diff))
+
+    expect(o).to.eql(['foo', 'bar', 'baz'])
+    expect(o.log.length).to.eql(1) 
+    expect(last(o.log).diff).to.eql(undefined)
+    expect(last(o.log).value.toJS()).to.eql(['foo', 'bar', 'baz'])
+    expect(changes).to.eql([])
+
+    expect(update(1, 'lol')(o)).to.eql(o)
+    expect(o).to.eql(['foo', 'lol', 'baz'])
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: '1', value: 'lol', type: 'update' })
+    expect(last(o.log).value.toJS()).to.eql(['foo', 'lol', 'baz'])
+    expect(changes).to.eql(o.log.slice(1).map(d => d.diff))
+  })
+    
+  it('should update - object', () => {
+    var changes = []
+      , o = versioned({ foo: 'bar' }).on('log', diff => changes.push(diff))
+
+    expect(o).to.eql({ foo: 'bar' })
+    expect(o.log.length).to.eql(1)
+    expect(last(o.log).diff).to.eql(undefined)
+    expect(last(o.log).value.toJS()).to.eql({ foo: 'bar' })
+    expect(changes).to.eql([])
+
+    expect(update('foo', 'baz')(o)).to.eql(o)
+    expect(o).to.eql({ foo: 'baz' })
+    expect(o.log.length).to.eql(2)
+    expect(last(o.log).diff).to.eql({ key: 'foo', value: 'baz', type: 'update' })
+    expect(last(o.log).value.toJS()).to.eql({ foo: 'baz' })
+    expect(changes).to.eql(o.log.slice(1).map(d => d.diff))
   })
 
-    it('should explicitly add entries with O.o (object)', done => {
-    var o = versioned({})
-    
-    time(100, d => set(o)({ key: 0, value: 1, type: 'add' }))
-    time(110, d => {
-      expect(o).to.eql({ 0: 1 })
-      expect(last(o.log).diff).to.eql({ key: '0', value: 1, type: 'add' })
-      expect(last(o.log).value.toJS()).to.eql({ 0: 1 })
-    })
+  it('should fail gracefully with non-objects', () => {
+    expect(versioned(true)).to.be.eql(true)
+    expect(versioned(false)).to.be.eql(false)
+    expect(versioned(5)).to.be.eql(5)
+    expect(versioned('foo')).to.be.eql('foo')
 
-    time(200, d => set(o)({ key: 0, value: 2, type: 'update' }))
-    time(210, d => {
-      expect(o).to.eql({ 0: 2 })
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'update' })
-      expect(last(o.log).value.toJS()).to.eql({ 0: 2 })
-    })
-
-    time(300, d => set(o)({ key: 0, value: 2, type: 'delete' }))
-    time(310, d => {
-      expect(o).to.eql({})
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'delete' })
-      expect(last(o.log).value.toJS()).to.eql({})
-    })
-
-    time(400, done)
+    expect(set({ key: 'foo', value: 'bar', type: 'add' })(true)).to.be.eql(true)
+    expect(set({ key: 'foo', value: 'bar', type: 'add' })(false)).to.be.eql(false)
+    expect(set({ key: 'foo', value: 'bar', type: 'add' })(5)).to.be.eql(5)
+    expect(set({ key: 'foo', value: 'bar', type: 'add' })('foo')).to.be.eql('foo')
+  })
+  
+  it('should skip gracefully non-arrays with push/pop', () => {
+    expect(push('foo')(versioned({}))).to.be.eql({})
+    expect(pop(versioned({}))).to.be.eql({})
   })
 
-  it('should explicitly add entries without O.o (object)', done => {
-    var observe = Object.observe
-    delete Object.observe
+  it('should work on non-versioned data', () => {
+    var changes = []
+      , o = {}
 
-    var o = versioned({})
-    
-    time(100, d => set(o)({ key: 0, value: 1, type: 'add' }))
-    time(110, d => {
-      expect(o).to.eql({ 0: 1 })
-      expect(last(o.log).diff).to.eql({ key: '0', value: 1, type: 'add' })
-      expect(last(o.log).value.toJS()).to.eql({ 0: 1 })
-    })
+    expect(set({ key: 'foo', value: 'bar', type: 'add' })(o)).to.eql({ foo: 'bar' })
+    expect(o.log).to.not.be.ok
+    expect(o.emit).to.not.be.ok
 
-    time(200, d => set(o)({ key: 0, value: 2, type: 'update' }))
-    time(210, d => {
-      expect(o).to.eql({ 0: 2 })
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'update' })
-      expect(last(o.log).value.toJS()).to.eql({ 0: 2 })
-    })
+    emitterify(o).on('log', diff => changes.push(diff))
 
-    time(300, d => set(o)({ key: 0, value: 2, type: 'delete' }))
-    time(310, d => {
-      expect(o).to.eql({})
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'delete' })
-      expect(last(o.log).value.toJS()).to.eql({})
-    })
+    expect(set({ key: 'bar', value: 'baz', type: 'add' })(o)).to.eql({ foo: 'bar', bar: 'baz' })
+    expect(o.log).to.not.be.ok
+    expect(o.emit).to.be.ok
+    expect(changes).to.be.eql([{ key: 'bar', value: 'baz', type: 'add' }])
 
-    time(400, d => Object.observe = observe)
-    time(410, done)
-  })
-
-  it('should explicitly add entries without O.o (array)', done => {
-    var observe = Object.observe
-    delete Object.observe
-
-    var o = versioned([])
-    
-    time(100, d => set(o)({ key: 0, value: 1, type: 'add' }))
-    time(110, d => {
-      expect(o).to.eql([1])
-      expect(last(o.log).diff).to.eql({ key: '0', value: 1, type: 'add' })
-      expect(last(o.log).value.toJS()).to.eql([1])
-    })
-
-    time(200, d => set(o)({ key: 0, value: 2, type: 'update' }))
-    time(210, d => {
-      expect(o).to.eql([2])
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'update' })
-      expect(last(o.log).value.toJS()).to.eql([2])
-    })
-
-    time(300, d => set(o)({ key: 0, value: 2, type: 'delete' }))
-    time(310, d => {
-      expect(o).to.eql([])
-      expect(last(o.log).diff).to.eql({ key: '0', value: 2, type: 'delete' })
-      expect(last(o.log).value.toJS()).to.eql([])
-    })
-
-    time(400, d => Object.observe = observe)
-    time(410, done)
   })
 
 })

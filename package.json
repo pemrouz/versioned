@@ -8,13 +8,13 @@
     "url": "git://github.com/rijs/versioned.git"
   },
   "scripts": {
-    "ignore": "find ./dist -type f -exec sed -i \"s/function _interopRequire/\\/* istanbul ignore next *\\/\\nfunction _interopRequire/g\" {} ;",
+    "ignore": "find ./dist -type f -exec sed -i -E \"s/function _interopRequire/\\/* istanbul ignore next *\\/\\nfunction _interopRequire/g\" {} ;",
     "babel": "babel src -d dist",
     "clean": "rm -rf dist && mkdir dist",
-    "build": "npm run clean && npm run babel && npm run ignore",
-    "test": "babel test.js > dist/test.js && istanbul test ./node_modules/mocha/bin/_mocha dist/test.js --report html -- -R spec && rm dist/test.js",
-    "coverage": "babel test.js > dist/test.js && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js --report lcovonly -- -R spec && rm -rf ./coverage && rm dist/test.js",
-    "cov": "babel test.js > dist/test.js && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js -- -R spec",
+    "build": "npm run clean && npm run babel",
+    "test": "babel test.js > dist/test.js && npm run ignore && istanbul test ./node_modules/mocha/bin/_mocha dist/test.js --report html -- -R spec && rm dist/test.js",
+    "coverage": "babel test.js > dist/test.js && npm run ignore && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js --report lcovonly -- -R spec && rm -rf ./coverage && rm dist/test.js",
+    "cov": "babel test.js > dist/test.js && npm run ignore && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js -- -R spec && rm dist/test.js",
     "version": "npm run build && git add -A",
     "postversion": "git push && git push --tags"
   },

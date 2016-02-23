@@ -3,8 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = versioned;
-exports.set = set;
+exports.update = exports.remove = exports.pop = exports.push = exports.set = exports.versioned = undefined;
 
 var _emitterify = require('utilise/emitterify');
 
@@ -22,172 +21,118 @@ var _str = require('utilise/str');
 
 var _str2 = _interopRequireDefault(_str);
 
-var _not = require('utilise/not');
-
-var _not2 = _interopRequireDefault(_not);
-
 var _is = require('utilise/is');
 
 var _is2 = _interopRequireDefault(_is);
-
-var _by = require('utilise/by');
-
-var _by2 = _interopRequireDefault(_by);
 
 var _immutable = require('immutable');
 
 /* istanbul ignore next */
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function versioned(o) {
-  if (o.log || !_is2.default.obj(o)) return o;
-  (0, _def2.default)((0, _emitterify2.default)(o), 'log', [{ value: immutable(o) }]);
-  if (supports()) observe(o, function (changes) {
-    return changes.map(normalize).map(append(o));
-  });
-  return o;
-}
+var versioned = exports.versioned = function versioned(o) {
+  return o.log || !_is2.default.obj(o) ? (log('expected to be an object: ', o), o) : ((0, _def2.default)((0, _emitterify2.default)(o, -1), 'log', [{ value: immutable(o) }]), o);
+};
 
-function set(o) {
-  return function (diff) {
+var set = exports.set = function set(diff) {
+  return function (o) {
+    if (!o || !_is2.default.obj(o)) return log('expected to be an object: ', o), o;
     var key = diff.key;
     var value = diff.value;
     var type = diff.type;
 
-    act.raw[arr(o)][type](o)(key = (0, _str2.default)(key), value);
-    if (!supports()) append(o)([{ key: key, value: value, type: type }]);else o.emit('change', { key: key, value: value, type: type });
+    act.raw[type](o)(key = (0, _str2.default)(key), value);
+    append({ key: key, value: value, type: type })(o);
+    return o;
   };
-}
+};
 
-function normalize(_ref) {
-  var type = _ref.type;
-  var oldValue = _ref.oldValue;
-  var removed = _ref.removed;
-  var object = _ref.object;
-  var name = _ref.name;
-  var index = _ref.index;
-  var addedCount = _ref.addedCount;
+var push = exports.push = function push(value) {
+  return function (o) {
+    return !_is2.default.arr(o) ? o : set({ key: o.length, value: value, type: 'add' })(o);
+  };
+};
 
-  var deleted = type == 'delete' ? oldValue : removed && removed[0],
-      key = name || (0, _str2.default)(index),
-      value = deleted || object[key],
-      entries = [];
+var pop = exports.pop = function pop(o) {
+  return !_is2.default.arr(o) ? o : set({ key: o.length - 1, value: (0, _last2.default)(o), type: 'remove' })(o);
+};
 
-  if (type == 'splice') type = deleted ? 'delete' : 'add';
+var remove = exports.remove = function remove(key) {
+  return function (o) {
+    return set({ key: key, value: o[key], type: 'remove' })(o);
+  };
+};
 
-  if (!_is2.default.arr(object) || !addedCount && !deleted) return [{ key: key, value: value, type: type }];
+var update = exports.update = function update(key, value) {
+  return function (o) {
+    return set({ key: key, value: value, type: 'update' })(o);
+  };
+};
 
-  for (var i = 0; i < removed.length | 0; i++) {
-    entries.push({ key: key, value: removed[i], type: 'delete' });
-  }for (var i = 0; i < addedCount; i++) {
-    entries.push({ key: (0, _str2.default)(index + i), value: object[index + i], type: 'add' });
-  }return entries;
-}
+var append = function append(diff) {
+  return function (o) {
+    var log = o.log;
 
-function append(o) {
-  return function (diffs) {
-    diffs.map(function (diff) {
+    if (o.log) {
       var key = diff.key;
       var value = diff.value;
       var type = diff.type;
-      var log = o.log;
-      var action = act.imm[arr(o)][type];
       var previous = (0, _last2.default)(log).value;
-      var value = action(previous)(key, value);
+      var action = act.imm[type](o);
+      var latest = action(previous)(key, value);
 
-      log.push({ value: value, diff: diff });
-      o.emit('change', diff);
-    });
+      log.push({ value: latest, diff: diff });
+    }
+
+    if (o.emit) o.emit('log', diff);
   };
-}
-
-function arr(o) {
-  return _is2.default.arr(o) ? 'arr' : 'obj';
-}
+};
 
 var act = {
   raw: {
-    arr: {
-      update: function update(o) {
-        return function (k, v) {
-          return o[k] = v;
-        };
-      },
-      delete: function _delete(o) {
-        return function (k, v) {
-          return o.splice(k, 1);
-        };
-      },
-      add: function add(o) {
-        return function (k, v) {
-          return o.splice(k, 0, v);
-        };
-      }
+    update: function update(o) {
+      return function (k, v) {
+        return o[k] = v;
+      };
     },
-    obj: {
-      update: function update(o) {
-        return function (k, v) {
-          return o[k] = v;
-        };
-      },
-      delete: function _delete(o) {
-        return function (k, v) {
-          return delete o[k];
-        };
-      },
-      add: function add(o) {
-        return function (k, v) {
-          return o[k] = v;
-        };
-      }
+    remove: function remove(o) {
+      return function (k, v) {
+        return _is2.default.arr(o) ? o.splice(k, 1) : delete o[k];
+      };
+    },
+    add: function add(o) {
+      return function (k, v) {
+        return _is2.default.arr(o) ? o.splice(k, 0, v) : o[k] = v;
+      };
     }
   },
   imm: {
-    arr: {
-      update: function update(o) {
+    update: function update(d) {
+      return function (o) {
         return function (k, v) {
           return o.set(k, v);
         };
-      },
-      delete: function _delete(o) {
-        return function (k, v) {
-          return o.splice(k, 1);
-        };
-      },
-      add: function add(o) {
-        return function (k, v) {
-          return o.splice(k, 0, v);
-        };
-      }
+      };
     },
-    obj: {
-      update: function update(o) {
+    remove: function remove(d) {
+      return function (o) {
         return function (k, v) {
-          return o.set(k, v);
+          return _is2.default.arr(d) ? o.splice(k, 1) : o.remove(k);
         };
-      },
-      delete: function _delete(o) {
+      };
+    },
+    add: function add(d) {
+      return function (o) {
         return function (k, v) {
-          return o.remove(k);
+          return _is2.default.arr(d) ? o.splice(k, 0, v) : o.set(k, v);
         };
-      },
-      add: function add(o) {
-        return function (k, v) {
-          return o.set(k, v);
-        };
-      }
+      };
     }
   }
 };
 
 var err = require('utilise/err')('[versioned]'),
     log = require('utilise/log')('[versioned]'),
-    supports = function supports(d) {
-  return !!Object.observe;
-},
     immutable = function immutable(o) {
   return _is2.default.arr(o) ? (0, _immutable.List)(o) : (0, _immutable.Map)(o);
-},
-    observe = function observe(o, fn) {
-  return _is2.default.arr(o) ? Array.observe(o, fn) : Object.observe(o, fn);
 };

@@ -8,7 +8,7 @@
     "url": "git://github.com/rijs/versioned.git"
   },
   "scripts": {
-    "ignore": "find ./dist -type f -exec sed -i -E \"s/function _interopRequire/\\/* istanbul ignore next *\\/\\nfunction _interopRequire/g\" {} ;",
+    "ignore": "sh -c 'find ./dist -type f -exec sed -i -E \"s/function _interopRequire/\\/* istanbul ignore next *\\/\\nfunction _interopRequire/g\" {} \\;'",
     "babel": "babel src -d dist",
     "clean": "rm -rf dist && mkdir dist",
     "build": "npm run clean && npm run babel",

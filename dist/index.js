@@ -1,7 +1,7 @@
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
-    value: true
+  value: true
 });
 
 var _emitterify = require('utilise/emitterify');
@@ -18,12 +18,10 @@ var _is2 = _interopRequireDefault(_is);
 
 var _immutable = require('immutable');
 
-/* istanbul ignore next */
-/* istanbul ignore next */
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = function (o) {
-    return o.log || !_is2.default.obj(o) ? (err('expected to be an object: ', o), o) : ((0, _def2.default)((0, _emitterify2.default)(o, -1), 'log', [{ value: (0, _immutable.fromJS)(o) }]), o);
+  return o.log || !_is2.default.obj(o) ? (err('expected to be an object: ', o), o) : ((0, _def2.default)((0, _emitterify2.default)(o, -1), 'log', [{ value: (0, _immutable.fromJS)(o) }]), o);
 };
 
 var err = require('utilise/err')('[versioned]');

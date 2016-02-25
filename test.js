@@ -26,13 +26,17 @@ describe('versioned', function() {
 
   it('should allow recreating', function(){
     var o = versioned({})
-    o.log.reset(['foo'])
+
+    expect(o.log.reset(['foo'])).to.eql(o.log)
+    expect(o.log.length).to.eql(2)
 
     expect(o.log[0].value.toJS()).to.eql({})
     expect(o.log[0].diff).to.eql(undefined)
 
     expect(o.log[1].value.toJS()).to.eql(['foo'])
     expect(o.log[1].diff).to.eql(undefined)
+
+
   })
 
 

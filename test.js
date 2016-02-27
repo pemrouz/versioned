@@ -35,8 +35,20 @@ describe('versioned', function() {
 
     expect(o.log[1].value.toJS()).to.eql(['foo'])
     expect(o.log[1].diff).to.eql(undefined)
+  })
 
+  it('should allow overwriting log', function(){
+    var a = versioned({})
+      , b = versioned([])
 
+    expect(b.log = a.log.reset(b)).to.eql(a.log)
+    expect(b.log.length).to.eql(2)
+
+    expect(b.log[0].value.toJS()).to.eql({})
+    expect(b.log[0].diff).to.eql(undefined)
+
+    expect(b.log[1].value.toJS()).to.eql([])
+    expect(b.log[1].diff).to.eql(undefined)
   })
 
 

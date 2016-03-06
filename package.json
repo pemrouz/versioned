@@ -15,7 +15,7 @@
     "build": "npm run clean && npm run babel && npm run bundle",
     "test": "babel test.js > dist/test.js && npm run ignore && istanbul test ./node_modules/mocha/bin/_mocha dist/test.js --report html -- -R spec && rm dist/test.js",
     "coverage": "babel test.js > dist/test.js && npm run ignore && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js --report lcovonly -- -R spec && rm -rf ./coverage && rm dist/test.js",
-    "cov": "babel test.js > dist/test.js && npm run ignore && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js -- -R spec && rm dist/test.js",
+    "cov": "babel test.js > dist/test.js && npm run ignore && istanbul cover ./node_modules/mocha/bin/_mocha dist/test.js -- -R spec",
     "version": "npm run build && git add -A",
     "postversion": "git push && git push --tags"
   },

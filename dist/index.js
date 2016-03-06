@@ -18,6 +18,7 @@ var _is2 = _interopRequireDefault(_is);
 
 var _immutable = require('immutable');
 
+/* istanbul ignore next */
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = function (o) {
